@@ -33,6 +33,7 @@ interface AppContextType {
   properties: Property[];
   setProperties: React.Dispatch<React.SetStateAction<Property[]>>;
   allUsers: UserType[];
+  setAllUsers: React.Dispatch<React.SetStateAction<UserType[]>>;
   verifications: VerificationRequest[];
   addVerification: (v: VerificationRequest) => void;
   updateVerification: (id: string, status: 'approved' | 'rejected') => void;
@@ -766,22 +767,47 @@ const LandingPage = () => {
 // --- Auth Page ---
 
 const AuthPage = ({ mode }: { mode: 'login' | 'register' }) => {
-  const { setUser } = useApp();
+  const { setUser, allUsers, setAllUsers } = useApp();
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [name, setName] = useState('');
   const [error, setError] = useState('');
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const found = MOCK_USERS.find(u => u.email === email && (u.password === password || password === 'demo'));
-    if (found) {
-      setUser(found);
-      if (found.role === UserRole.SUPERADMIN) navigate('/admin');
-      else if (found.role === UserRole.HOST) navigate('/host');
-      else navigate('/');
+    setError('');
+
+    if (mode === 'login') {
+      const found = allUsers.find(u => u.email === email && (u.password === password || password === 'demo'));
+      if (found) {
+        setUser(found);
+        if (found.role === UserRole.SUPERADMIN) navigate('/admin');
+        else if (found.role === UserRole.HOST) navigate('/host');
+        else navigate('/');
+      } else {
+        setError('Credenciales inválidas. Prueba con los datos de demo.');
+      }
     } else {
-      setError('Credenciales inválidas. Prueba con los datos de demo.');
+      // Registration logic
+      const exists = allUsers.find(u => u.email === email);
+      if (exists) {
+        setError('Este email ya está registrado.');
+        return;
+      }
+      const newUser: UserType = {
+        id: 'u-' + Math.random().toString(36).substr(2, 5),
+        name: name || 'Nuevo Usuario',
+        email,
+        password,
+        role: UserRole.GUEST,
+        isOnline: true,
+        idVerified: false,
+        avatar: `https://i.pravatar.cc/150?u=${email}`
+      };
+      setAllUsers(prev => [...prev, newUser]);
+      setUser(newUser);
+      navigate('/');
     }
   };
 
@@ -794,7 +820,13 @@ const AuthPage = ({ mode }: { mode: 'login' | 'register' }) => {
           <p className="text-slate-500 font-bold text-sm">Gestiona tus experiencias en Havenly</p>
         </div>
         {error && <p className="bg-red-50 text-red-500 p-5 rounded-[1.5rem] mb-8 text-sm font-bold shadow-sm">{error}</p>}
-        <form onSubmit={handleLogin} className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {mode === 'register' && (
+            <div>
+              <label className="block text-[10px] font-black uppercase text-slate-400 mb-2 ml-1 tracking-widest">Nombre Completo</label>
+              <input required type="text" value={name} onChange={e => setName(e.target.value)} placeholder="Tu nombre" className="w-full p-5 rounded-[1.5rem] border-2 border-transparent focus:border-indigo-600/20 bg-slate-50 dark:bg-slate-900 outline-none font-bold transition-all" />
+            </div>
+          )}
           <div>
             <label className="block text-[10px] font-black uppercase text-slate-400 mb-2 ml-1 tracking-widest">Email</label>
             <input required type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="tu@email.com" className="w-full p-5 rounded-[1.5rem] border-2 border-transparent focus:border-indigo-600/20 bg-slate-50 dark:bg-slate-900 outline-none font-bold transition-all" />
@@ -803,11 +835,15 @@ const AuthPage = ({ mode }: { mode: 'login' | 'register' }) => {
             <label className="block text-[10px] font-black uppercase text-slate-400 mb-2 ml-1 tracking-widest">Contraseña</label>
             <input required type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••" className="w-full p-5 rounded-[1.5rem] border-2 border-transparent focus:border-indigo-600/20 bg-slate-50 dark:bg-slate-900 outline-none font-bold transition-all" />
           </div>
-          <button type="submit" className="w-full py-6 rounded-[2rem] bg-indigo-600 text-white font-black text-xl shadow-2xl hover:bg-indigo-700 transition-all active:scale-95 transform">Entrar</button>
+          <button type="submit" className="w-full py-6 rounded-[2rem] bg-indigo-600 text-white font-black text-xl shadow-2xl hover:bg-indigo-700 transition-all active:scale-95 transform">
+            {mode === 'login' ? 'Entrar' : 'Registrarse'}
+          </button>
         </form>
         <div className="mt-10 text-center text-sm font-bold text-slate-400">
            {mode === 'login' ? '¿No tienes cuenta? ' : '¿Ya tienes cuenta? '}
-           <Link to={mode === 'login' ? '/register' : '/login'} className="text-pink-500 hover:underline">Solicita Acceso</Link>
+           <Link to={mode === 'login' ? '/register' : '/login'} className="text-pink-500 hover:underline">
+             {mode === 'login' ? 'Regístrate aquí' : 'Inicia sesión'}
+           </Link>
         </div>
       </motion.div>
     </div>
@@ -1191,6 +1227,7 @@ const AppProvider = ({ children }: { children?: React.ReactNode }) => {
     { id: 'b1', propertyId: 'p1', guestId: 'u-guest', checkIn: '2024-06-01', checkOut: '2024-06-05', totalPrice: 1000, taxAmount: 100, commissionAmount: 50, status: 'paid', guestsCount: 2 }
   ]);
   const [properties, setProperties] = useState<Property[]>(MOCK_PROPERTIES);
+  const [allUsers, setAllUsers] = useState<UserType[]>(MOCK_USERS);
   const [verifications, setVerifications] = useState<VerificationRequest[]>([]);
   
   // Real-time chat state within session
@@ -1230,7 +1267,7 @@ const AppProvider = ({ children }: { children?: React.ReactNode }) => {
   return (
     <AppContext.Provider value={{ 
       user, setUser, siteConfig, setSiteConfig, isDark, toggleTheme: () => setIsDark(!isDark),
-      bookings, setBookings, properties, setProperties, allUsers: MOCK_USERS,
+      bookings, setBookings, properties, setProperties, allUsers, setAllUsers,
       verifications, addVerification, updateVerification,
       chatThreads, setChatThreads, chatMessages, sendChatMessage
     }}>
