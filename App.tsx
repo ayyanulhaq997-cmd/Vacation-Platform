@@ -854,19 +854,59 @@ const AuthPage = ({ mode }: { mode: 'login' | 'register' }) => {
 
 const PropertyDetailPage = () => {
   const { id } = useParams();
-  const { properties, user, verifications, addVerification } = useApp();
+  const { properties, user, verifications, addVerification, setBookings } = useApp();
   const navigate = useNavigate();
   const [advice, setAdvice] = useState<string>('');
   const [loadingAdvice, setLoadingAdvice] = useState(false);
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
   const [isVerificationModalOpen, setIsVerificationModalOpen] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [docBase64, setDocBase64] = useState<string | null>(null);
+
+  // Booking state
+  const [checkIn, setCheckIn] = useState('');
+  const [checkOut, setCheckOut] = useState('');
+  const [guestsCount, setGuestsCount] = useState(1);
 
   const property = properties.find(p => p.id === id);
 
   const hostVerification = user ? verifications.find(v => v.userId === user.id && v.hostId === property?.hostId) : null;
   const isVerifiedForThisHost = hostVerification?.status === 'approved';
   const hasPendingVerification = hostVerification?.status === 'pending';
+
+  const calculateTotalPrice = () => {
+    if (!checkIn || !checkOut || !property) return 0;
+    const start = new Date(checkIn);
+    const end = new Date(checkOut);
+    const nights = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+    return nights > 0 ? nights * property.pricePerNight : 0;
+  };
+
+  const handleBooking = () => {
+    if (!user) return navigate('/login');
+    if (!checkIn || !checkOut) return alert('Por favor selecciona las fechas de tu estancia.');
+    
+    const total = calculateTotalPrice();
+    if (total <= 0) return alert('Las fechas seleccionadas no son válidas.');
+
+    const newBooking: Booking = {
+      id: 'b-' + Math.random().toString(36).substr(2, 5),
+      propertyId: property!.id,
+      guestId: user.id,
+      checkIn,
+      checkOut,
+      totalPrice: total,
+      taxAmount: total * 0.1,
+      commissionAmount: total * 0.05,
+      status: 'pending',
+      guestsCount
+    };
+
+    setBookings(prev => [...prev, newBooking]);
+    alert('¡Reserva enviada! El anfitrión revisará tu solicitud.');
+    navigate('/');
+  };
 
   const handleGetAdvice = async () => {
     if (!property) return;
@@ -876,19 +916,32 @@ const PropertyDetailPage = () => {
     setLoadingAdvice(false);
   };
 
+  const handleDocUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setDocBase64(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const handleSubmitVerification = (e: React.FormEvent) => {
     e.preventDefault();
     if (!user || !property) return;
+    if (!docBase64) return alert('Por favor sube tu documento de identidad.');
     
     addVerification({
       id: Math.random().toString(36).substr(2, 9),
       userId: user.id,
       hostId: property.hostId,
       status: 'pending',
-      documentUrl: 'https://cdn.pixabay.com/photo/2013/07/12/15/41/passport-150247_1280.png',
+      documentUrl: docBase64,
       submittedAt: new Date().toLocaleDateString()
     });
     setIsVerificationModalOpen(false);
+    setDocBase64(null);
   };
 
   if (!property) return <div className="p-40 text-center font-black text-5xl opacity-10">404</div>;
@@ -921,33 +974,70 @@ const PropertyDetailPage = () => {
             </div>
           </div>
 
-          <div className="glass-card p-12 rounded-[4rem] shadow-2xl bg-white dark:bg-slate-900 border-none flex flex-col gap-6">
+          <div className="glass-card p-12 rounded-[4rem] shadow-2xl bg-white dark:bg-slate-900 border-none flex flex-col gap-8">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-4xl font-black mb-1">€{property.pricePerNight}</p>
                 <p className="text-slate-400 font-bold uppercase tracking-widest text-xs">Por Noche</p>
               </div>
-
-              {isVerifiedForThisHost ? (
-                <button 
-                  onClick={() => alert('¡Funcionalidad de reserva próximamente!')}
-                  className="px-12 py-6 rounded-[2.5rem] bg-pink-500 text-white font-black text-2xl shadow-2xl shadow-pink-500/30 hover:bg-pink-600 transition-all active:scale-95 flex items-center gap-3"
-                >
-                  <Calendar size={28} /> Reservar
-                </button>
-              ) : (
-                <button 
-                  onClick={() => {
-                    if (!user) navigate('/login');
-                    else setIsVerificationModalOpen(true);
-                  }}
-                  disabled={hasPendingVerification}
-                  className={`px-8 py-5 rounded-[2rem] font-black text-lg shadow-xl transition-all flex items-center gap-2 ${hasPendingVerification ? 'bg-slate-100 text-slate-400 cursor-not-allowed' : 'bg-indigo-600 text-white hover:bg-indigo-700 active:scale-95'}`}
-                >
-                  {hasPendingVerification ? <><Clock size={20}/> Pendiente de Host</> : <><ShieldAlert size={20}/> Verificar Identidad</>}
-                </button>
-              )}
+              <div className="text-right">
+                <p className="text-3xl font-black text-indigo-600">€{calculateTotalPrice()}</p>
+                <p className="text-slate-400 font-bold uppercase tracking-widest text-[10px]">Total Estimado</p>
+              </div>
             </div>
+
+            <div className="grid grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase text-slate-400 ml-1">Llegada</label>
+                <input 
+                  type="date" 
+                  value={checkIn}
+                  onChange={e => setCheckIn(e.target.value)}
+                  className="w-full p-4 rounded-2xl bg-slate-50 dark:bg-slate-800 border-none outline-none font-bold"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase text-slate-400 ml-1">Salida</label>
+                <input 
+                  type="date" 
+                  value={checkOut}
+                  onChange={e => setCheckOut(e.target.value)}
+                  className="w-full p-4 rounded-2xl bg-slate-50 dark:bg-slate-800 border-none outline-none font-bold"
+                />
+              </div>
+              <div className="col-span-2 space-y-2">
+                <label className="text-[10px] font-black uppercase text-slate-400 ml-1">Huéspedes</label>
+                <select 
+                  value={guestsCount}
+                  onChange={e => setGuestsCount(Number(e.target.value))}
+                  className="w-full p-4 rounded-2xl bg-slate-50 dark:bg-slate-800 border-none outline-none font-bold appearance-none"
+                >
+                  {[...Array(property.maxGuests)].map((_, i) => (
+                    <option key={i+1} value={i+1}>{i+1} Persona{i > 0 ? 's' : ''}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {isVerifiedForThisHost ? (
+              <button 
+                onClick={handleBooking}
+                className="w-full py-6 rounded-[2.5rem] bg-pink-500 text-white font-black text-2xl shadow-2xl shadow-pink-500/30 hover:bg-pink-600 transition-all active:scale-95 flex items-center justify-center gap-3"
+              >
+                <Calendar size={28} /> Reservar Ahora
+              </button>
+            ) : (
+              <button 
+                onClick={() => {
+                  if (!user) navigate('/login');
+                  else setIsVerificationModalOpen(true);
+                }}
+                disabled={hasPendingVerification}
+                className={`w-full py-6 rounded-[2.5rem] font-black text-xl shadow-xl transition-all flex items-center justify-center gap-2 ${hasPendingVerification ? 'bg-slate-100 text-slate-400 cursor-not-allowed' : 'bg-indigo-600 text-white hover:bg-indigo-700 active:scale-95'}`}
+              >
+                {hasPendingVerification ? <><Clock size={24}/> Verificación Pendiente</> : <><ShieldAlert size={24}/> Verificar Identidad para Reservar</>}
+              </button>
+            )}
             
             {!isVerifiedForThisHost && (
               <div className="bg-slate-50 dark:bg-slate-800/50 p-6 rounded-3xl flex items-center gap-4 border border-dashed border-slate-200 dark:border-slate-700">
@@ -1006,11 +1096,31 @@ const PropertyDetailPage = () => {
               </p>
            </div>
            <form onSubmit={handleSubmitVerification} className="space-y-8">
-              <div className="border-4 border-dashed border-slate-100 dark:border-slate-800 rounded-[2.5rem] p-12 text-center group hover:border-indigo-500/30 transition-all cursor-pointer">
-                 <Upload size={48} className="mx-auto text-slate-300 group-hover:text-indigo-500 mb-4" />
-                 <p className="font-black text-lg">Sube tu Pasaporte o DNI</p>
-                 <p className="text-xs text-slate-400 font-bold mt-2">Formatos aceptados: JPG, PNG, PDF (Max 5MB)</p>
+              <div 
+                onClick={() => fileInputRef.current?.click()}
+                className={`border-4 border-dashed rounded-[2.5rem] p-12 text-center group transition-all cursor-pointer ${docBase64 ? 'border-green-500 bg-green-50 dark:bg-green-900/10' : 'border-slate-100 dark:border-slate-800 hover:border-indigo-500/30'}`}
+              >
+                 {docBase64 ? (
+                   <>
+                     <CheckCircle size={48} className="mx-auto text-green-500 mb-4" />
+                     <p className="font-black text-lg text-green-600">Documento Cargado</p>
+                     <p className="text-xs text-slate-400 font-bold mt-2">Haz clic para cambiar el archivo</p>
+                   </>
+                 ) : (
+                   <>
+                     <Upload size={48} className="mx-auto text-slate-300 group-hover:text-indigo-500 mb-4" />
+                     <p className="font-black text-lg">Sube tu Pasaporte o DNI</p>
+                     <p className="text-xs text-slate-400 font-bold mt-2">Formatos aceptados: JPG, PNG, PDF (Max 5MB)</p>
+                   </>
+                 )}
               </div>
+              <input 
+                ref={fileInputRef}
+                type="file" 
+                accept="image/*,application/pdf"
+                onChange={handleDocUpload}
+                className="hidden" 
+              />
               <button type="submit" className="w-full py-5 rounded-[2rem] bg-indigo-600 text-white font-black text-xl shadow-xl hover:bg-indigo-700 transition-all active:scale-95">
                 Enviar para Aprobación
               </button>
