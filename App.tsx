@@ -9,7 +9,7 @@ import {
   Upload, CheckSquare, Clock, Paperclip, Send, Globe, DollarSign,
   Share, Wifi, Waves, Wind, Tv, Utensils, Car, ShieldAlert, ShieldCheck, AlertCircle, Eye,
   Paperclip as AttachmentIcon, Smile, ChevronLeft, ChevronRight as ChevronRightIcon,
-  Activity, TrendingUp, CreditCard as CardIcon, Zap, Wallet, Info, FileText
+  Activity, TrendingUp, CreditCard as CardIcon, Zap, Wallet, Info, FileText, Image as ImageIcon
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
@@ -420,6 +420,7 @@ const AdminPropertiesView = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const isAdmin = user?.role === UserRole.SUPERADMIN;
 
@@ -431,7 +432,7 @@ const AdminPropertiesView = () => {
     category: 'Villa',
     maxGuests: '4',
     description: '',
-    imageUrl: 'https://images.unsplash.com/photo-1613490493576-7fde63acd811?q=80&w=1000'
+    images: [] as string[]
   });
 
   const filtered = properties.filter(p => {
@@ -448,8 +449,33 @@ const AdminPropertiesView = () => {
     }
   };
 
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (files) {
+      Array.from(files).forEach(file => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setFormData(prev => ({
+            ...prev,
+            images: [...prev.images, reader.result as string]
+          }));
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+  };
+
+  const removeImage = (index: number) => {
+    setFormData(prev => ({
+      ...prev,
+      images: prev.images.filter((_, i) => i !== index)
+    }));
+  };
+
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
+    const finalImages = formData.images.length > 0 ? formData.images : ['https://images.unsplash.com/photo-1613490493576-7fde63acd811?q=80&w=1000'];
+
     if (editingId) {
       setProperties(prev => prev.map(p => p.id === editingId ? { 
         ...p, 
@@ -458,7 +484,8 @@ const AdminPropertiesView = () => {
         pricePerNight: Number(formData.pricePerNight), 
         category: formData.category,
         maxGuests: Number(formData.maxGuests),
-        description: formData.description
+        description: formData.description,
+        images: finalImages
       } : p));
     } else {
       const newProperty: Property = {
@@ -470,7 +497,7 @@ const AdminPropertiesView = () => {
         category: formData.category,
         maxGuests: Number(formData.maxGuests),
         description: formData.description,
-        images: [formData.imageUrl],
+        images: finalImages,
         rating: 4.5,
         reviewsCount: 0,
         amenities: ['WiFi', 'Cocina'],
@@ -481,7 +508,7 @@ const AdminPropertiesView = () => {
     }
     setIsModalOpen(false);
     setEditingId(null);
-    setFormData({ title: '', location: '', pricePerNight: '', category: 'Villa', maxGuests: '4', description: '', imageUrl: 'https://images.unsplash.com/photo-1613490493576-7fde63acd811?q=80&w=1000' });
+    setFormData({ title: '', location: '', pricePerNight: '', category: 'Villa', maxGuests: '4', description: '', images: [] });
   };
 
   const openEdit = (e: React.MouseEvent, p: Property) => {
@@ -495,7 +522,7 @@ const AdminPropertiesView = () => {
       category: p.category,
       maxGuests: p.maxGuests.toString(),
       description: p.description,
-      imageUrl: p.images[0]
+      images: p.images
     });
     setIsModalOpen(true);
   };
@@ -504,7 +531,7 @@ const AdminPropertiesView = () => {
     <div className="flex-1 p-12 overflow-y-auto">
       <div className="flex justify-between items-center mb-12">
         <h1 className="text-4xl font-black">Gestionar Propiedades</h1>
-        <button onClick={() => { setEditingId(null); setIsModalOpen(true); }} className="bg-pink-500 text-white px-8 py-4 rounded-2xl font-black flex items-center gap-3 shadow-xl hover:bg-pink-600 transition-all transform hover:scale-105 active:scale-95">
+        <button onClick={() => { setEditingId(null); setFormData({ title: '', location: '', pricePerNight: '', category: 'Villa', maxGuests: '4', description: '', images: [] }); setIsModalOpen(true); }} className="bg-pink-500 text-white px-8 py-4 rounded-2xl font-black flex items-center gap-3 shadow-xl hover:bg-pink-600 transition-all transform hover:scale-105 active:scale-95">
           <Plus size={20} /> Nueva Propiedad
         </button>
       </div>
@@ -565,10 +592,46 @@ const AdminPropertiesView = () => {
                 <label className="block text-[10px] font-black uppercase text-slate-400 mb-2 ml-1">Huéspedes Máximos</label>
                 <input required type="number" value={formData.maxGuests} onChange={e => setFormData({...formData, maxGuests: e.target.value})} className="w-full p-4 rounded-2xl bg-slate-50 dark:bg-slate-800 border-none outline-none font-bold shadow-inner" placeholder="4" />
               </div>
+              
               <div className="col-span-2">
-                <label className="block text-[10px] font-black uppercase text-slate-400 mb-2 ml-1">URL de Imagen Principal</label>
-                <input required type="text" value={formData.imageUrl} onChange={e => setFormData({...formData, imageUrl: e.target.value})} className="w-full p-4 rounded-2xl bg-slate-50 dark:bg-slate-800 border-none outline-none font-bold shadow-inner" placeholder="https://..." />
+                <label className="block text-[10px] font-black uppercase text-slate-400 mb-2 ml-1">Imágenes de la Propiedad</label>
+                <div className="space-y-4">
+                  <div className="grid grid-cols-4 gap-4">
+                    {formData.images.map((img, idx) => (
+                      <div key={idx} className="relative aspect-square rounded-xl overflow-hidden group">
+                        <img src={img} className="w-full h-full object-cover" />
+                        <button 
+                          type="button"
+                          onClick={() => removeImage(idx)}
+                          className="absolute top-1 right-1 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <X size={12} />
+                        </button>
+                      </div>
+                    ))}
+                    <button 
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="aspect-square rounded-xl border-2 border-dashed border-slate-200 dark:border-slate-700 flex flex-col items-center justify-center text-slate-400 hover:text-indigo-600 hover:border-indigo-600 transition-all"
+                    >
+                      <Plus size={24} />
+                      <span className="text-[10px] font-black uppercase mt-1">Añadir</span>
+                    </button>
+                  </div>
+                  <input 
+                    ref={fileInputRef}
+                    type="file" 
+                    multiple 
+                    accept="image/*"
+                    onChange={handleFileUpload} 
+                    className="hidden" 
+                  />
+                  {formData.images.length === 0 && (
+                    <p className="text-[10px] text-slate-400 italic">Sube al menos una imagen real de tu propiedad.</p>
+                  )}
+                </div>
               </div>
+
               <div className="col-span-2">
                 <label className="block text-[10px] font-black uppercase text-slate-400 mb-2 ml-1">Descripción Detallada</label>
                 <textarea value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} className="w-full p-5 rounded-[2rem] bg-slate-50 dark:bg-slate-800 border-none outline-none font-medium text-sm shadow-inner min-h-[150px]" placeholder="Describe los encantos de tu propiedad..."></textarea>
