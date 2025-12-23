@@ -1,0 +1,7 @@
+{
+  "name": "Havenly SaaS - Multi-Role Vacation Platform",
+  "description": "Comprehensive SaaS application with dedicated Master Admin, Host, and Guest panels.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
