@@ -72,7 +72,7 @@ export const MOCK_PROPERTIES: Property[] = [
   },
   {
     id: 'p2',
-    hostId: 'u-host',
+    hostId: 'u-admin', // Changed to different host so verification doesn't "leak" from u-host properties
     title: 'Apartamento Céntrico de Lujo',
     description: 'Elegante apartamento en el corazón de la ciudad, cerca de los mejores restaurantes y museos.',
     pricePerNight: 180,

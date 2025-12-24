@@ -70,6 +70,7 @@ export interface ChatThread {
 
 export interface ChatMessage {
   id: string;
+  threadId: string;
   senderId: string;
   text: string;
   timestamp: string;
