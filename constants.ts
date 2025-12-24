@@ -65,6 +65,7 @@ export const MOCK_PROPERTIES: Property[] = [
     rating: 4.8,
     reviewsCount: 127,
     amenities: ['WiFi', 'Piscina', 'Aire Acondicionado', 'Cocina', 'TV', 'Parking'],
+    rules: ['No fumar', 'No se permiten fiestas', 'Huéspedes adicionales bajo petición'],
     maxGuests: 4,
     status: 'available',
     taxRate: 0.0625
@@ -83,6 +84,7 @@ export const MOCK_PROPERTIES: Property[] = [
     rating: 4.6,
     reviewsCount: 89,
     amenities: ['WiFi', 'Aire Acondicionado', 'Cocina'],
+    rules: ['Silencio después de las 22:00', 'No mascotas'],
     maxGuests: 2,
     status: 'available',
     taxRate: 0.0625

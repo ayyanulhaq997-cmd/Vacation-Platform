@@ -39,6 +39,7 @@ export interface Property {
   rating: number;
   reviewsCount: number;
   amenities: string[];
+  rules: string[];
   maxGuests: number;
   status: 'available' | 'maintenance';
   taxRate: number;
