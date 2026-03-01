@@ -1,0 +1,4 @@
+Contact: mailto:support@havenly.com
+Expires: 2027-03-01T00:00:00.000Z
+Preferred-Languages: en
+Policy: https://ais-pre-kfmk5p5fuklgnaxp3a6waz-96562956505.asia-east1.run.app/contact

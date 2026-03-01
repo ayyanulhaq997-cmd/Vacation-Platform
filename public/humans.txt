@@ -1,0 +1,12 @@
+/* TEAM */
+  Chef: Havenly Team
+  Contact: support@havenly.com
+  Twitter: @havenly
+  From: San Francisco, CA
+
+/* SITE */
+  Last update: 2026-03-01
+  Language: English
+  Doctype: HTML5
+  IDE: AI Studio
+  Framework: React, Vite, Tailwind CSS

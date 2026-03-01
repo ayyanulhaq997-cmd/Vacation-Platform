@@ -4,47 +4,78 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="google-adsense-account" content="ca-pub-7966132303564694">
-    <title>Havenly | Vacation Rentals</title>
+    <title>Havenly | Premium Rental SaaS</title>
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7966132303564694"
      crossorigin="anonymous"></script>
+    <meta name="google-adsense-account" content="ca-pub-7966132303564694">
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
+      :root {
+        --brand: #6366f1;
+        --brand-hover: #4f46e5;
+        --bg-light: #ffffff;
+        --bg-dark: #09090b;
+      }
       body {
+        font-family: 'Inter', sans-serif;
+        letter-spacing: -0.01em;
+      }
+      h1, h2, h3, h4, h5, h6 {
         font-family: 'Plus Jakarta Sans', sans-serif;
       }
-      .glass-card {
-        background: rgba(255, 255, 255, 0.7);
-        backdrop-filter: blur(10px);
-        -webkit-backdrop-filter: blur(10px);
-        border: 1px solid rgba(255, 255, 255, 0.2);
+      .saas-border {
+        border: 1px solid rgba(0, 0, 0, 0.08);
       }
-      .dark .glass-card {
-        background: rgba(15, 23, 42, 0.7);
-        border: 1px solid rgba(255, 255, 255, 0.05);
+      .dark .saas-border {
+        border: 1px solid rgba(255, 255, 255, 0.1);
       }
-      ::-webkit-scrollbar {
-        width: 8px;
+      .saas-card {
+        background: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 0.75rem;
+        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
       }
-      ::-webkit-scrollbar-track {
+      .dark .saas-card {
+        background: #18181b;
+        border: 1px solid #27272a;
+        box-shadow: none;
+      }
+      .custom-scrollbar::-webkit-scrollbar {
+        width: 5px;
+      }
+      .custom-scrollbar::-webkit-scrollbar-track {
         background: transparent;
       }
-      ::-webkit-scrollbar-thumb {
-        background: #cbd5e1;
-        border-radius: 4px;
+      .custom-scrollbar::-webkit-scrollbar-thumb {
+        background: #e2e8f0;
+        border-radius: 10px;
       }
-      .dark ::-webkit-scrollbar-thumb {
-        background: #334155;
+      .dark .custom-scrollbar::-webkit-scrollbar-thumb {
+        background: #27272a;
+      }
+      .btn-primary {
+        background-color: var(--brand);
+        color: white;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+      .btn-primary:hover {
+        background-color: var(--brand-hover);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(99, 102, 241, 0.25);
+      }
+      .sidebar-active {
+        background-color: #f4f4f5;
+        color: #18181b;
+      }
+      .dark .sidebar-active {
+        background-color: #27272a;
+        color: #fafafa;
       }
     </style>
     <script>
-      /** 
-       * Safety Shim: Prevents 'ReferenceError: process is not defined' 
-       * in browser environments where process isn't natively available.
-       */
       window.process = window.process || { env: { API_KEY: "" } };
     </script>
 <script type="importmap">
@@ -61,10 +92,10 @@
   }
 }
 </script>
+<link rel="stylesheet" href="/index.css">
 </head>
-<body class="bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100 transition-colors duration-300">
+<body class="bg-[#fafafa] text-slate-900 dark:bg-[#09090b] dark:text-slate-100 transition-colors duration-200">
     <div id="root"></div>
-    <!-- Entry point script -->
-    <script type="module" src="./index.tsx"></script>
+    <script type="module" src="/frontend/index.tsx"></script>
 </body>
 </html>
